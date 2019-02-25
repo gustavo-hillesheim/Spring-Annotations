@@ -3,8 +3,8 @@ package main;
 import annotation.authentication.NoEncodingEncoder;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import hava.annotation.spring.annotations.Authentication;
-import hava.annotation.spring.annotations.HASConfiguration;
+import main.annotations.Authentication;
+import main.annotations.HASConfiguration;
 
 @SpringBootApplication
 @HASConfiguration(debug = true)

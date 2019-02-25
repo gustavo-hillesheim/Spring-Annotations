@@ -1,6 +1,6 @@
 package main;
 
-import hava.annotation.spring.annotations.CRUD;
+import main.annotations.CRUD;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;

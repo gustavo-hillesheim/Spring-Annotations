@@ -11,7 +11,7 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import hava.annotation.spring.configurators.AuthenticationConfigurator;
+import main.configurators.AuthenticationConfigurator;
 
 //@Configuration
 //@EnableWebSecurity
