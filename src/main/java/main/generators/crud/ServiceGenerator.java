@@ -1,8 +1,17 @@
 package main.generators.crud;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.TypeMirror;
+
+import main.annotations.Endpoint;
+import main.exceptions.EntityNotFoundException;
+import main.generators.args.ThreeArgs;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -19,7 +28,7 @@ import main.generators.CodeGenerator;
 import main.generators.Generator;
 import main.generators.args.TwoArgs;
 
-public class ServiceGenerator extends Generator<TwoArgs<String, CRUD>> {
+public class ServiceGenerator extends Generator<ThreeArgs<String, CRUD, List<? extends Element>>> {
 
 
 	private String suffix;
@@ -37,10 +46,11 @@ public class ServiceGenerator extends Generator<TwoArgs<String, CRUD>> {
 		this.classesPrefix = classesPrefix;
 	}
 
-	public TypeSpec generate(TwoArgs<String, CRUD> args) {
+	public TypeSpec generate(ThreeArgs<String, CRUD, List<? extends Element>> args) {
 
 	    String name = args.one();
 	    CRUD crud = args.two();
+	    List<? extends Element> endpoints = args.three();
 	  
 		this.pagination = crud.pagination();
 
@@ -51,7 +61,9 @@ public class ServiceGenerator extends Generator<TwoArgs<String, CRUD>> {
 
 		MethodSpec one = this.createMethod("one")
 			.addParameter(this.eleUtils.elementIdParam())
-			.addStatement("return $T.ok(this.repository.findById(id))", ResponseEntity.class)
+			.addStatement("return $T.ok(this.repository.findById(id)\n"
+						+".orElseThrow(() -> new $T($S, id))",
+				ResponseEntity.class, EntityNotFoundException.class, name)
 			.build();
 
 		MethodSpec all = crud.filter().fields().length > 0 ? this.filterableAll(crud.filter()) : this.simpleAll();
@@ -64,7 +76,7 @@ public class ServiceGenerator extends Generator<TwoArgs<String, CRUD>> {
 
 		String repositoryClassName = this.classesPrefix + name + this.repSuffix;
 		
-		return TypeSpec.classBuilder(this.classesPrefix + name + this.suffix)
+		TypeSpec.Builder builder = TypeSpec.classBuilder(this.classesPrefix + name + this.suffix)
 			.addModifiers(Modifier.PUBLIC)
 			.addAnnotation(Component.class)
 			.addField(
@@ -75,10 +87,30 @@ public class ServiceGenerator extends Generator<TwoArgs<String, CRUD>> {
 			.addMethod(save)
 			.addMethod(one)
 			.addMethod(all)
-			.addMethod(delete)
-			.build();
+			.addMethod(delete);
+
+		endpoints.forEach(el -> builder.addMethod(createEndpoint(el)));
+
+		return builder.build();
 	}
 
+
+	private MethodSpec createEndpoint(Element element) {
+
+		String elementName = element.getSimpleName().toString();
+		elementName = String.valueOf(elementName.charAt(0)).toUpperCase() + elementName.substring(1);
+
+		return createMethod(element.getSimpleName().toString())
+			.addParameter(this.eleUtils.elementIdParam())
+			.addException(EntityNotFoundException.class)
+			.addStatement("return $T.ok(this.repository.findById(id)\n"
+				+ ".orElseThrow(() -> new $T($S, id))"
+				+ ".get" + elementName + "())",
+				ResponseEntity.class,
+				EntityNotFoundException.class,
+				element.getEnclosingElement().getSimpleName().toString())
+			.build();
+	}
 
 	private MethodSpec simpleAll() {
 

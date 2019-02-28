@@ -1,4 +1,4 @@
-package annotation.authentication;
+package main.authentication;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 

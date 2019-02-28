@@ -1,4 +1,4 @@
-package annotation.authentication;
+package main.authentication;
 
 import main.TesteRepository;
 import org.springframework.beans.factory.annotation.Autowired;

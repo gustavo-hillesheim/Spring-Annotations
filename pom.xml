@@ -6,7 +6,7 @@
 
     <groupId>group.hill</groupId>
     <artifactId>has</artifactId>
-    <version>1.0</version>
+    <version>1.0.1</version>
 
 	<build>
 		<sourceDirectory>src/main/java</sourceDirectory>
@@ -14,12 +14,12 @@
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.8.0</version>
-        <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
-        </configuration>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.8.0</version>
+				<configuration>
+				  <source>1.8</source>
+				  <target>1.8</target>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
@@ -74,8 +74,15 @@
 			<scope>test</scope>
 		</dependency>
 
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<version>1.4.198</version>
+			<scope>test</scope>
+		</dependency>
 
-		<!-- Dependências específicas -->
+
+		<!-- Dependências específicas do spring -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>

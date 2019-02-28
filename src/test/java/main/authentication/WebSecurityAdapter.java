@@ -1,4 +1,4 @@
-package annotation.authentication;
+package main.authentication;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -13,30 +13,30 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import main.configurators.AuthenticationConfigurator;
 
-//@Configuration
-//@EnableWebSecurity
+@Configuration
+@EnableWebSecurity
 public class WebSecurityAdapter extends WebSecurityConfigurerAdapter {
 
-    @Autowired
-    private AuthenticationConfigurator authConfig;
+	@Autowired
+	private AuthenticationConfigurator authConfig;
 
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
 
-	    authConfig.configure(http, authenticationManager());
-	  
+		authConfig.configure(http, authenticationManager());
+
 		http.cors().and().csrf().disable();
-		
+
 		http.authorizeRequests()
 			.antMatchers(HttpMethod.GET, "/test/**")
-				.authenticated()
+			.authenticated()
 			.antMatchers(HttpMethod.POST, "/test")
-				.permitAll();
+			.permitAll();
 	}
-	
+
 	@Override
 	protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-	    authConfig.configure(auth);
+		authConfig.configure(auth);
 	}
 
 	@Bean
