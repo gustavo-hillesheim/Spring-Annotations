@@ -5,19 +5,23 @@ import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
 import main.annotations.CRUD;
+import main.annotations.Endpoint;
 import main.annotations.Filter;
+import main.exceptions.EntityNotFoundException;
 import main.generators.CodeGenerator;
 import main.generators.Generator;
-import main.generators.args.ThreeArgs;
+import main.generators.args.FourArgs;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.TypeMirror;
 import java.util.Arrays;
+import java.util.List;
 
-public class ControllerGenerator extends Generator<ThreeArgs<String, String, CRUD>> {
+public class ControllerGenerator extends Generator<FourArgs<String, String, CRUD, List<? extends Element>>> {
 
 	private String suffix;
 	private String serSuffix;
@@ -34,15 +38,17 @@ public class ControllerGenerator extends Generator<ThreeArgs<String, String, CRU
 		this.classesPrefix = classesPrefix;
 	}
 
-	public TypeSpec generate(ThreeArgs<String, String, CRUD> args) {
+	public TypeSpec generate(FourArgs<String, String, CRUD, List<? extends Element>> args) {
 
 	    String name = args.one();
 	    String endpoint = args.two();
 	    CRUD crud = args.three();
+	    List<? extends Element> endpoints = args.four();
 	  
 		this.pagination = crud.pagination();
 
 		MethodSpec one = MethodSpec.methodBuilder("one")
+			.addException(EntityNotFoundException.class)
 			.addAnnotation(this.annBuilder.getMapping("{id}"))
 			.addParameter(this.eleUtils.elementIdPathParam())
 			.addStatement("return this.service.one(id)")
@@ -67,7 +73,7 @@ public class ControllerGenerator extends Generator<ThreeArgs<String, String, CRU
 		
 		String serviceClassName = this.classesPrefix + name + serSuffix;
 		
-		return TypeSpec.classBuilder(this.classesPrefix + name + this.suffix)
+		TypeSpec.Builder builder = TypeSpec.classBuilder(this.classesPrefix + name + this.suffix)
 			.addModifiers(Modifier.PUBLIC)
 			.addAnnotation(RestController.class)
 			.addAnnotation(this.annBuilder.requestMapping("/" + endpoint))
@@ -78,8 +84,11 @@ public class ControllerGenerator extends Generator<ThreeArgs<String, String, CRU
 			.addMethod(all)
 			.addMethod(one)
 			.addMethod(save)
-			.addMethod(delete)
-			.build();
+			.addMethod(delete);
+
+		endpoints.forEach(el -> builder.addMethod(createEndpoint(el)));
+
+		return builder.build();
 	}
 
 	private MethodSpec simpleAll() {
@@ -118,6 +127,21 @@ public class ControllerGenerator extends Generator<ThreeArgs<String, String, CRU
 
 		return this.addArguments(builder, fields)
 			.addStatement(getReturn(fields), ResponseEntity.class)
+			.returns(ResponseEntity.class)
+			.build();
+	}
+
+	private MethodSpec createEndpoint(Element element) {
+
+		String elementName = element.getSimpleName().toString();
+		String endpointValue = element.getAnnotation(Endpoint.class).value();
+		String path = "{id}/" + ("".equals(endpointValue) ? elementName : endpointValue);
+
+		return MethodSpec.methodBuilder(elementName)
+			.addAnnotation(this.annBuilder.getMapping(path))
+			.addParameter(this.eleUtils.elementIdPathParam())
+			.addException(EntityNotFoundException.class)
+			.addStatement("return this.service." + elementName + "(id)")
 			.returns(ResponseEntity.class)
 			.build();
 	}

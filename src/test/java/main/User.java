@@ -4,6 +4,7 @@ import main.annotations.CRUD;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+import main.annotations.Endpoint;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -20,10 +21,9 @@ public class User {
   @GeneratedValue
   private Long id;
   private String nome;
+
+  @Endpoint
   private String senha;
 
   public User() {}
-  
-  public String getNome() { return this.nome; }
-  public String getSenha() { return this.senha; }
 }

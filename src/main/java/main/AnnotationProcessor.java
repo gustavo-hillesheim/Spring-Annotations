@@ -22,7 +22,7 @@ public class AnnotationProcessor extends AbstractProcessor {
   @Override
   public synchronized void init(ProcessingEnvironment processingEnv) {
     super.init(processingEnv);
-    
+
     this.codeGenerator = new CodeGenerator(processingEnv.getElementUtils(), processingEnv.getFiler(), processingEnv.getTypeUtils());
   }
 
@@ -59,8 +59,9 @@ public class AnnotationProcessor extends AbstractProcessor {
 
       HASConfiguration config = el.getAnnotation(HASConfiguration.class);
 
+      this.codeGenerator.setSaving(config.save());
+      this.codeGenerator.setSavingOutput(config.savingOutput());
       this.codeGenerator.setSuffixes(config.suffixes());
-      this.codeGenerator.setDebug(config.debug());
       this.codeGenerator.setClassesPrefix(config.classesPrefix());
     }
   }

@@ -6,11 +6,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.CLASS)
-@Target(ElementType.TYPE)
-public @interface HASConfiguration {
+@Target(ElementType.FIELD)
+public @interface Endpoint {
 
-	boolean save() default false;
-	String savingOutput() default "src/main/java";
-	Suffixes suffixes() default @Suffixes;
-	String classesPrefix() default "AG";
+	String value() default "";
 }

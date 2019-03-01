@@ -12,6 +12,7 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.util.Elements;
 import javax.persistence.Id;
 import javax.persistence.Transient;
+import java.lang.annotation.Annotation;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -69,6 +70,13 @@ public class ElementUtils {
 	public String getEnclosedTypeStr(String elementName) {
 
 		return this.getEnclosedElement(elementName).asType().toString();
+	}
+
+	public List<? extends Element> getEnclosedElementsAnnotatedWith(Class<? extends Annotation> annotation) {
+
+		return this.getEnclosedElements().stream()
+			.filter(el -> ((Element) el).getAnnotation(annotation) != null)
+			.collect(Collectors.toList());
 	}
 
 	public List<? extends Element> getEnclosedElements() {

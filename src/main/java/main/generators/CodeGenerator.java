@@ -1,18 +1,23 @@
 package main.generators;
 
+import java.io.File;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.persistence.Entity;
+
+import main.annotations.*;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -20,10 +25,6 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.TypeSpec;
-import main.annotations.Authentication;
-import main.annotations.CRUD;
-import main.annotations.HASConfiguration;
-import main.annotations.Suffixes;
 import main.builders.AnnotationBuilder;
 import main.builders.ParameterBuilder;
 import main.generators.args.Args;
@@ -38,6 +39,7 @@ import main.generators.crud.ServiceGenerator;
 import main.utils.ElementUtils;
 import io.jsonwebtoken.SignatureAlgorithm;
 
+
 public class CodeGenerator {
 
 
@@ -50,7 +52,8 @@ public class CodeGenerator {
   private Elements elementUtils;
   private Types typeUtils;
 
-  private boolean debug;
+  private boolean save;
+  private String savingOutput;
   private String repSuffix;
   private String serSuffix;
   private String conSuffix;
@@ -65,7 +68,8 @@ public class CodeGenerator {
     this.typeUtils = typeUtils;
 
     try {
-      setDebug((Boolean) HASConfiguration.class.getDeclaredMethod("debug").getDefaultValue());
+      setSavingOutput((String) HASConfiguration.class.getDeclaredMethod("savingOutput").getDefaultValue());
+      setSaving((Boolean) HASConfiguration.class.getDeclaredMethod("save").getDefaultValue());
       setSuffixes(
           (Suffixes) HASConfiguration.class.getDeclaredMethod("suffixes").getDefaultValue());
       setClassesPrefix(
@@ -97,8 +101,8 @@ public class CodeGenerator {
     Long expiration = auth.expiration();
 
     generateAuthClasses(encoderType, successAuthHandlerType, failureAuthHandlerType, 
-                    packageName, secret, useEncoderGetInstance, createWebConfig, 
-                    expiration, algorithm);
+                    packageName, secret, useEncoderGetInstance,
+                    createWebConfig, expiration, algorithm);
   }
   
   private void generateAuthClasses(TypeMirror encoderType, TypeMirror successAuthHandlerType, TypeMirror failureAuthHandlerType,
@@ -265,7 +269,7 @@ public class CodeGenerator {
     return false;
   }
 
-  
+  @SuppressWarnings("unchecked")
   public void processCrud(Element element) throws RuntimeException {
 
     if (element.getKind() != ElementKind.CLASS) {
@@ -285,11 +289,22 @@ public class CodeGenerator {
     CRUD annCrud = element.getAnnotation(CRUD.class);
     prefix = "".equals(annCrud.name()) ? prefix : annCrud.name();
     String endpoint = "".equals(annCrud.endpoint()) ? prefix.toLowerCase() : annCrud.endpoint();
-    
-    generateCrudClasses(prefix, endpoint, packageName, annCrud);
+
+    List<? extends Element> endpoints = this.eleUtils.getEnclosedElementsAnnotatedWith(Endpoint.class);
+
+    try {
+      if (element.getAnnotation((Class<? extends Annotation>) Class.forName("lombok.Getter")) == null
+          && element.getAnnotation((Class<? extends Annotation>) Class.forName("lombok.Data")) == null) {
+        validateEndpoints(endpoints);
+      }
+    } catch (Exception e) {
+      validateEndpoints(endpoints);
+    }
+
+    generateCrudClasses(prefix, endpoint, packageName, annCrud, endpoints);
   }
   
-  private void generateCrudClasses(String prefix, String endpoint, String packageName, CRUD annCrud) {
+  private void generateCrudClasses(String prefix, String endpoint, String packageName, CRUD annCrud, List<? extends Element> endpoints) {
     
     RepositoryGenerator repGenerator =
         new RepositoryGenerator(this, this.repSuffix, this.classesPrefix);
@@ -301,37 +316,64 @@ public class CodeGenerator {
         new ControllerGenerator(this, this.conSuffix, this.serSuffix, this.classesPrefix);
     
     save(repGenerator.generate(Args.of(prefix, annCrud)), packageName);
-    save(serGenerator.generate(Args.of(prefix, annCrud)), packageName);
-    save(conGenerator.generate(Args.of(prefix, endpoint, annCrud)), packageName);
+    save(serGenerator.generate(Args.of(prefix, annCrud, endpoints)), packageName);
+    save(conGenerator.generate(Args.of(prefix, endpoint, annCrud, endpoints)), packageName);
+  }
+
+  private void validateEndpoints(List<? extends Element> endpoints) {
+
+    endpoints.forEach(element -> {
+      boolean hasGetter = element.getEnclosingElement().getEnclosedElements()
+          .stream().filter(el ->
+              ("get" + element.getSimpleName().toString()).equalsIgnoreCase(el.getSimpleName().toString())
+                  && el.getKind() == ElementKind.METHOD
+                  && el.getModifiers().contains(Modifier.PUBLIC)
+                  && ((ExecutableElement) el).getReturnType() == element.asType())
+          .collect(Collectors.toList()).size() == 1;
+
+      if (!hasGetter) {
+        throw new RuntimeException("An element annotated with @Endpoint must have a public getter in it's enclosing element");
+      }
+    });
   }
 
   private void save(TypeSpec spec, String packageName) throws RuntimeException {
 
-    JavaFile file = JavaFile.builder(packageName, spec).build();
+    JavaFile file = JavaFile.builder(packageName + ".autogenerated", spec).build();
 
     String generatedFor =
         this.eleUtils != null ? this.eleUtils.elementTypeStr() : this.generatedFor;
 
     try {
-      if (debug) {
-        System.out.println("\n"
-            + this.strUtils.center(String.format("Class generated for %s", generatedFor)));
 
-        file.writeTo(System.out);
+      System.out.println("\n"
+          + this.strUtils.center(String.format("Class generated for %s", generatedFor)));
 
-        System.out.println(this.strUtils.center(""));
-      }
+      file.writeTo(System.out);
 
-      file.writeTo(this.filer);
+      System.out.println(this.strUtils.center(""));
+
+
+      if (this.save)
+        file.writeTo(new File(this.savingOutput));
+      else
+        file.writeTo(this.filer);
+
     } catch (IOException e) {
+
       throw new RuntimeException("Could not write class to filer: " + e.getMessage());
     }
   }
 
 
-  public void setDebug(boolean debug) {
+  public void setSaving(boolean save) {
 
-    this.debug = debug;
+  	this.save = save;
+  }
+
+  public void setSavingOutput(String savingOutput) {
+
+    this.savingOutput = savingOutput;
   }
 
   public void setSuffixes(Suffixes suffixes) {

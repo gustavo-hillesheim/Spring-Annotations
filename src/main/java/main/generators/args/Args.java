@@ -34,4 +34,9 @@ public class Args<A> {
     
     return new ThreeArgs<>(arg1, arg2, arg3);
   }
+
+  public static <B, C, D, E> FourArgs<B, C, D, E> of (B arg1, C arg2, D arg3, E arg4) {
+
+    return new FourArgs<>(arg1, arg2, arg3, arg4);
+  }
 }
