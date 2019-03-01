@@ -8,7 +8,7 @@ package com.example.has;
 
 @Entity
 @CRUD
-public class Test {
+public class Example {
   
   @Id
   private Long id;
@@ -22,15 +22,15 @@ public class Test {
 }
 ```
 
-  The only pre-requisites for running this code without errors are:
+  The pre-requisites for running this piece of code without errors are:
   
     * The class must be annotated with javax.persistence.Entity
     * The class must have a field annotated iwth javax.persistence.Id
     
-  This is all you need to do to generate all 4 CRUD operations for this entity.
+  This is all you need to generate all 4 CRUD operations for this entity.
   The @Endpoint annotation at `username` will create an endpoint on the controller for getting specifically this field's value.
   
-Customizations
+### Customizations
   
   For @CRUD you can specify four different configurations that will be used to generate the classes:
     
@@ -39,8 +39,27 @@ Customizations
   * `pagination` will define if the `getAll` method will be able to paginate or not the response. If not set true will be used as default value.
   * `filter` this configuration's value is another annotation (`@Filter`) of this library. This one have only two configurations:
     * `fields` will specify which fields will be used for filtering. if not set the `getAll` method won't be filterable.
-    * `likeType` will determine how to treat String comparison on query using `like` operator, the four possible values are: START, END, BOTH and NONE.
+    * `likeType` will determine how to treat String comparison on query using `like` operator, the four possible values are: START, END, BOTH and NONE. if not set BOTH will be used as default value.
         
-  For @Endpoint you can only specify it's value.
+  For @Endpoint you can only specify it's value. If not set the field's name to lower case will be used as default value.
   
 ## @Authentication Example
+```
+package com.example.has;
+
+@Authentication(secret = "MySecret", encoder = MyEncoder.class)
+public class Example {
+}
+```
+
+  The pre-requistes for running this piece of code without errors are:
+  
+   * Creating an encoder class that extends `org.springframework.security.crypto.password.PasswordEncoder`, in this example named `MyEncoder`.
+   * Creating an implementation of `org.springframework.security.core.userdetails.UserDetailsService` using Spring Boot conventions.
+    
+  This is all you need to generate a JWT Authenticated Spring Boot Application.
+  Using this annotation this way your whole application will need authentication to be accessed, the only endpoint avaiable for any request is `/login`.
+  
+### Customizations
+
+  
