@@ -60,9 +60,10 @@ public class ServiceGenerator extends Generator<ThreeArgs<String, CRUD, List<? e
 			.build();
 
 		MethodSpec one = this.createMethod("one")
+			.addException(EntityNotFoundException.class)
 			.addParameter(this.eleUtils.elementIdParam())
 			.addStatement("return $T.ok(this.repository.findById(id)\n"
-						+".orElseThrow(() -> new $T($S, id))",
+						+".orElseThrow(() -> new $T($S, id)))",
 				ResponseEntity.class, EntityNotFoundException.class, name)
 			.build();
 

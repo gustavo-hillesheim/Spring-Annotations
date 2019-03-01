@@ -9,7 +9,8 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface HASConfiguration {
 
-	boolean debug() default false;
+	boolean save() default false;
+	String savingOutput() default "src/main/java";
 	Suffixes suffixes() default @Suffixes;
 	String classesPrefix() default "AG";
 }

@@ -98,10 +98,11 @@ public class AuthenticationConfiguratorGenerator extends Generator<TwoArgs<TypeM
 			.addModifiers(Modifier.PRIVATE)
 			.returns(PasswordEncoder.class);
 
+		System.out.println(passwordEncoder.toString());
 		if (useEncoderGetInstance)
 			builder.addStatement("return $T.getInstance()", passwordEncoder);
 		else {
-			builder.addStatement("return $T.class.newInstance()", passwordEncoder)
+			builder.addStatement("return new $T()", passwordEncoder)
 				.addException(IllegalAccessException.class)
 				.addException(InstantiationException.class);
 		}

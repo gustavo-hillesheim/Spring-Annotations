@@ -48,6 +48,7 @@ public class ControllerGenerator extends Generator<FourArgs<String, String, CRUD
 		this.pagination = crud.pagination();
 
 		MethodSpec one = MethodSpec.methodBuilder("one")
+			.addException(EntityNotFoundException.class)
 			.addAnnotation(this.annBuilder.getMapping("{id}"))
 			.addParameter(this.eleUtils.elementIdPathParam())
 			.addStatement("return this.service.one(id)")

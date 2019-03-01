@@ -7,7 +7,7 @@ import main.annotations.Authentication;
 import main.annotations.HASConfiguration;
 
 @SpringBootApplication
-@HASConfiguration(debug = true)
+@HASConfiguration(save = true, savingOutput = "src/test/java")
 @Authentication(secret = "GustavoLegal", encoder = NoEncodingEncoder.class)
 public class Main {
 
