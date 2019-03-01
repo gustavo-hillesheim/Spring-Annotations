@@ -1,6 +1,6 @@
 # Spring-Annotations
 
-Spring Annotations (also reffered to as HAS) is an Java library for generating controllers, services and repositories for CRUD and Authentication operations of Spring Boot applications. 
+Spring Annotations (also reffered to as HAS) is a Java library for generating controllers, services and repositories for CRUD and Authentication operations of Spring Boot applications. 
 
 ## @CRUD and @Endpoint Example
 ```
