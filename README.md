@@ -58,7 +58,14 @@ public class Example {
    * Creating an implementation of `org.springframework.security.core.userdetails.UserDetailsService` using Spring Boot conventions.
     
   This is all you need to generate a JWT Authenticated Spring Boot Application.
-  Using this annotation this way your whole application will need authentication to be accessed, the only endpoint avaiable for any request is `/login`.
+  A few details before we go into customizations: 
+  
+  * If you configure @Authentication this way your whole application will need authentication to be accessed, except for `/login`.
+  * The default return for `/login` is a JSON containing:
+    * `timestamp`: the date of the request in milliseconds.
+    * `status`: the status of the response (OK or UNAUTHORIZED).
+    * `token` or `error`: the token if the credentials were valid, otherwise will be "Could not  authenticate".
+    * `message`: "Authenticated successfully" if the credentials were valid, otherwise will be the error raised.
   
 ### Customizations
 
