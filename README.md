@@ -39,8 +39,8 @@ Customizations
   * `pagination` will define if the `getAll` method will be able to paginate or not the response. If not set true will be used as default value.
   * `filter` this configuration's value is another annotation (`@Filter`) of this library. This one have only two configurations:
     * `fields` will specify which fields will be used for filtering. if not set the `getAll` method won't be filterable.
-    * `likeType` will determine how to treat String comparison on query, the four possible values are: START, END, BOTH and NONE.
+    * `likeType` will determine how to treat String comparison on query using `like` operator, the four possible values are: START, END, BOTH and NONE.
         
-  For @Endpoint you can only specify the value.
+  For @Endpoint you can only specify it's value.
   
 ## @Authentication Example
