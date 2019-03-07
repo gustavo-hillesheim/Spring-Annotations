@@ -17,26 +17,26 @@ import main.configurators.AuthenticationConfigurator;
 @EnableWebSecurity
 public class WebSecurityAdapter extends WebSecurityConfigurerAdapter {
 
-	@Autowired
-	private AuthenticationConfigurator authConfig;
+	/*@Autowired
+	private AuthenticationConfigurator authConfig;*/
 
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
 
-		authConfig.configure(http, authenticationManager());
+		//authConfig.configure(http, authenticationManager());
 
 		http.cors().and().csrf().disable();
 
 		http.authorizeRequests()
 			.antMatchers(HttpMethod.GET, "/test/**")
-			.authenticated()
+			.permitAll()//.authenticated()
 			.antMatchers(HttpMethod.POST, "/test")
 			.permitAll();
 	}
 
 	@Override
 	protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-		authConfig.configure(auth);
+		//authConfig.configure(auth);
 	}
 
 	@Bean

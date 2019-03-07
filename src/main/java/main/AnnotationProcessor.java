@@ -1,6 +1,7 @@
 package main;
 
 import com.google.auto.service.AutoService;
+import com.squareup.javapoet.JavaFile;
 import main.annotations.Authentication;
 import main.annotations.CRUD;
 import main.annotations.HASConfiguration;
@@ -10,6 +11,14 @@ import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import javax.tools.JavaFileManager;
+import javax.tools.JavaFileObject;
+import javax.tools.StandardLocation;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.lang.reflect.Field;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -21,9 +30,7 @@ public class AnnotationProcessor extends AbstractProcessor {
 
   @Override
   public synchronized void init(ProcessingEnvironment processingEnv) {
-    super.init(processingEnv);
-
-    this.codeGenerator = new CodeGenerator(processingEnv.getElementUtils(), processingEnv.getFiler(), processingEnv.getTypeUtils());
+    super.init(processingEnv);    this.codeGenerator = new CodeGenerator(processingEnv.getElementUtils(), processingEnv.getFiler(), processingEnv.getTypeUtils());
   }
 
   @Override

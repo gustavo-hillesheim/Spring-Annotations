@@ -17,13 +17,13 @@ import javax.persistence.Id;
 @CRUD(endpoint = "test")
 public class User {
 
-  @Id
-  @GeneratedValue
-  private Long id;
-  private String nome;
+	@Id
+	@GeneratedValue
+	private Long id;
+	private String nome;
 
-  @Endpoint
-  private String senha;
+	@Endpoint
+	private String senha;
 
-  public User() {}
+	public User() {}
 }

@@ -12,7 +12,7 @@ public abstract class Generator<Arg extends Args> {
   protected AnnotationBuilder annBuilder;
   protected ElementUtils eleUtils;
   
-  public Generator(main.generators.CodeGenerator codeGenerator) {
+  public Generator(CodeGenerator codeGenerator) {
     
     this.parBuilder = codeGenerator.parBuilder;
     this.annBuilder = codeGenerator.annBuilder;

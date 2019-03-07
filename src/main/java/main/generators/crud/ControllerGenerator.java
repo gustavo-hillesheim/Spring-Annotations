@@ -1,9 +1,7 @@
 package main.generators.crud;
 
-import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.FieldSpec;
-import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.TypeSpec;
+import ch.qos.logback.core.joran.conditional.ElseAction;
+import com.squareup.javapoet.*;
 import main.annotations.CRUD;
 import main.annotations.Endpoint;
 import main.annotations.Filter;
@@ -11,14 +9,22 @@ import main.exceptions.EntityNotFoundException;
 import main.generators.CodeGenerator;
 import main.generators.Generator;
 import main.generators.args.FourArgs;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.TypeMirror;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 public class ControllerGenerator extends Generator<FourArgs<String, String, CRUD, List<? extends Element>>> {
@@ -133,17 +139,64 @@ public class ControllerGenerator extends Generator<FourArgs<String, String, CRUD
 
 	private MethodSpec createEndpoint(Element element) {
 
+		Endpoint endpoint = element.getAnnotation(Endpoint.class);
 		String elementName = element.getSimpleName().toString();
-		String endpointValue = element.getAnnotation(Endpoint.class).value();
+		String endpointValue = endpoint.value();
 		String path = "{id}/" + ("".equals(endpointValue) ? elementName : endpointValue);
+		String serviceErasure = "(id)";
+		RequestMethod endpointMethod = endpoint.method();
 
-		return MethodSpec.methodBuilder(elementName)
-			.addAnnotation(this.annBuilder.getMapping(path))
+
+		MethodSpec.Builder builder = MethodSpec.methodBuilder(elementName)
+			.addAnnotation(
+				AnnotationSpec.builder(RequestMapping.class)
+					.addMember("method", "$T.$L", RequestMethod.class, endpointMethod)
+					.addMember("path", "$S", path)
+					.build())
 			.addParameter(this.eleUtils.elementIdPathParam())
 			.addException(EntityNotFoundException.class)
-			.addStatement("return this.service." + elementName + "(id)")
-			.returns(ResponseEntity.class)
-			.build();
+			.returns(ResponseEntity.class);
+
+		if (element.getKind() == ElementKind.METHOD) {
+
+			ExecutableElement execElement = (ExecutableElement) element;
+
+			if (endpointMethod == RequestMethod.POST)
+				builder
+					.addParameter(
+						this.parBuilder
+							.type(String.class)
+							.name("bodyStr")
+							.annotation(RequestBody.class)
+							.build())
+					.addStatement("$T body = new $T(bodyStr)",
+						JSONObject.class, JSONObject.class)
+					.beginControlFlow("try");
+			else
+				this.eleUtils.addRequestParameter(builder, execElement);
+
+			if (execElement.getParameters().size() > 0) {
+				serviceErasure = "(id, "
+						+ this.eleUtils.getParameters(
+							(ExecutableElement) element,
+							endpointMethod,
+							"body")
+							.substring(1);
+
+			}
+		}
+
+		builder.addStatement("return this.service." + elementName + serviceErasure);
+
+		if (element.getKind() == ElementKind.METHOD && endpointMethod == RequestMethod.POST)
+			builder.nextControlFlow("catch ($T | $T e)", ClassCastException.class, JSONException.class)
+				.addStatement("$T.out.println(body)", System.class)
+				.addStatement("e.printStackTrace()")
+				.addStatement("return $T.badRequest().body($S)", ResponseEntity.class,
+					"Invalid body values")
+				.endControlFlow();
+
+		return builder.build();
 	}
 
 	private String getReturn(String[] fields) {

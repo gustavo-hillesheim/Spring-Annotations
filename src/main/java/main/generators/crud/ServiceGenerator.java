@@ -3,15 +3,13 @@ package main.generators.crud;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
+import javax.lang.model.element.*;
 import javax.lang.model.type.TypeMirror;
 
 import main.annotations.Endpoint;
 import main.exceptions.EntityNotFoundException;
 import main.generators.args.ThreeArgs;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -98,6 +96,13 @@ public class ServiceGenerator extends Generator<ThreeArgs<String, CRUD, List<? e
 
 	private MethodSpec createEndpoint(Element element) {
 
+		return element.getKind() == ElementKind.FIELD ?
+			this.createFieldEndpoint(element) :
+			this.createMethodEndpoint((ExecutableElement) element);
+	}
+
+	private MethodSpec createFieldEndpoint(Element element) {
+
 		String elementName = element.getSimpleName().toString();
 		elementName = String.valueOf(elementName.charAt(0)).toUpperCase() + elementName.substring(1);
 
@@ -105,12 +110,32 @@ public class ServiceGenerator extends Generator<ThreeArgs<String, CRUD, List<? e
 			.addParameter(this.eleUtils.elementIdParam())
 			.addException(EntityNotFoundException.class)
 			.addStatement("return $T.ok(this.repository.findById(id)\n"
-				+ ".orElseThrow(() -> new $T($S, id))"
-				+ ".get" + elementName + "())",
+					+ ".orElseThrow(() -> new $T($S, id))\n"
+					+ ".get" + elementName + "())",
 				ResponseEntity.class,
 				EntityNotFoundException.class,
 				element.getEnclosingElement().getSimpleName().toString())
 			.build();
+	}
+
+	private MethodSpec createMethodEndpoint(ExecutableElement element) {
+
+		MethodSpec.Builder builder = createMethod(element.getSimpleName().toString())
+			.addParameter(this.eleUtils.elementIdParam())
+			.addException(EntityNotFoundException.class);
+
+		String elementName = element.getSimpleName().toString();
+		String methodParameters = this.eleUtils.getParameters(element);
+		this.eleUtils.addParameter(builder, element);
+
+		builder.addStatement("return $T.ok(this.repository.findById(id)\n"
+				+ ".orElseThrow(() -> new $T($S, id))"
+				+ "." + elementName + methodParameters + ")",
+			ResponseEntity.class,
+			EntityNotFoundException.class,
+			element.getEnclosingElement().getSimpleName().toString());
+
+		return builder.build();
 	}
 
 	private MethodSpec simpleAll() {

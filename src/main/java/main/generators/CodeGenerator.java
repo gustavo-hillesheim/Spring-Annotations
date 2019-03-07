@@ -3,6 +3,7 @@ package main.generators;
 import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.processing.Filer;
@@ -315,9 +316,15 @@ public class CodeGenerator {
     ControllerGenerator conGenerator =
         new ControllerGenerator(this, this.conSuffix, this.serSuffix, this.classesPrefix);
     
-    save(repGenerator.generate(Args.of(prefix, annCrud)), packageName);
-    save(serGenerator.generate(Args.of(prefix, annCrud, endpoints)), packageName);
-    save(conGenerator.generate(Args.of(prefix, endpoint, annCrud, endpoints)), packageName);
+    save(
+        repGenerator.generate(Args.of(prefix, annCrud)),
+        packageName);
+    save(
+        serGenerator.generate(Args.of(prefix, annCrud, endpoints)),
+        packageName);
+    save(
+        conGenerator.generate(Args.of(prefix, endpoint, annCrud, endpoints)),
+        packageName);
   }
 
   private void validateEndpoints(List<? extends Element> endpoints) {

@@ -89,7 +89,22 @@ public class AuthenticationFilterGenerator extends Generator<TwoArgs<TypeMirror,
           .endControlFlow()
           .build();
 
+      MethodSpec createSuccessBody = MethodSpec.methodBuilder("createSuccessBody")
+          .addModifiers(Modifier.PRIVATE)
+          .addParameter(
+              this.parBuilder.name("token")
+                  .type(String.class)
+                  .build())
+          .addStatement("return \""
+                  + "{\\\"timestamp\\\": \" + new $T().getTime() + \", "
+                  + "\\\"status\\\": \" + $T.SC_OK + \", "
+                  + "\\\"token\\\": \\\"\" + token + \"\\\", "
+                  + "\\\"message\\\": \\\"Authenticated successfully\\\"}\"",
+              Date.class, HttpServletResponse.class)
+          .returns(String.class).build();
+
       builder.addMethod(successfulAuthentication);
+      builder.addMethod(createSuccessBody);
     } else {
 
       constructorBuilder.addStatement("setAuthenticationSuccessHandler(new $T())", successHandler);
@@ -118,7 +133,22 @@ public class AuthenticationFilterGenerator extends Generator<TwoArgs<TypeMirror,
           .addStatement("response.getWriter().append(this.createUnsuccessBody(e.getMessage()))")
           .build();
 
+      MethodSpec createUnsuccessBody = MethodSpec.methodBuilder("createUnsuccessBody")
+          .addModifiers(Modifier.PRIVATE)
+          .addParameter(
+              this.parBuilder.name("message")
+                  .type(String.class)
+                  .build())
+          .addStatement("return \""
+                  + "{\\\"timestamp\\\": \" + new $T().getTime() + \", "
+                  + "\\\"status\\\": \" + $T.SC_UNAUTHORIZED + \", "
+                  + "\\\"error\\\": \\\"Could not authenticate\\\", "
+                  + "\\\"message\\\": \" + message + \"}\"",
+              Date.class, HttpServletResponse.class)
+          .returns(String.class).build();
+
       builder.addMethod(unsuccessfulAuthentication);
+      builder.addMethod(createUnsuccessBody);
     } else {
 
       constructorBuilder.addStatement("setAuthenticationFailureHandler(new $T())", failureHandler);
@@ -157,34 +187,6 @@ public class AuthenticationFilterGenerator extends Generator<TwoArgs<TypeMirror,
         .returns(Authentication.class)
         .build();
 
-    MethodSpec createSuccessBody = MethodSpec.methodBuilder("createSuccessBody")
-        .addModifiers(Modifier.PRIVATE)
-        .addParameter(
-            this.parBuilder.name("token")
-                .type(String.class)
-                .build())
-        .addStatement("return \"" 
-            + "{\\\"timestamp\\\": \" + new $T().getTime() + \", "
-            + "\\\"status\\\": \" + $T.SC_OK + \", " 
-            + "\\\"token\\\": \\\"\" + token + \"\\\", "
-            + "\\\"message\\\": \\\"Authenticated successfully\\\"}\"", 
-            Date.class, HttpServletResponse.class)
-        .returns(String.class).build();
-
-    MethodSpec createUnsuccessBody = MethodSpec.methodBuilder("createUnsuccessBody")
-        .addModifiers(Modifier.PRIVATE)
-        .addParameter(
-            this.parBuilder.name("message")
-                .type(String.class)
-                .build())
-        .addStatement("return \"" 
-            + "{\\\"timestamp\\\": \" + new $T().getTime() + \", "
-            + "\\\"status\\\": \" + $T.SC_UNAUTHORIZED + \", "
-            + "\\\"error\\\": \\\"Could not authenticate\\\", "
-            + "\\\"message\\\": \" + message + \"}\"", 
-            Date.class, HttpServletResponse.class)
-        .returns(String.class).build();
-
     FieldSpec jwtUtilField =
         FieldSpec.builder(
             ClassName.get("", this.classesPrefix + "JWTUtil"),
@@ -199,8 +201,6 @@ public class AuthenticationFilterGenerator extends Generator<TwoArgs<TypeMirror,
     return builder
         .addMethod(constructor)
         .addMethod(attemptAuthentication)
-        .addMethod(createSuccessBody)
-        .addMethod(createUnsuccessBody)
         .addField(jwtUtilField)
         .addField(authManagerField)
         .build();

@@ -1,14 +1,18 @@
 package main.utils;
 
+import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeName;
 import main.builders.AnnotationBuilder;
 import main.builders.ParameterBuilder;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.util.Elements;
 import javax.persistence.Id;
 import javax.persistence.Transient;
@@ -25,7 +29,7 @@ public class ElementUtils {
 	private TypeName elementIdType = null;
 	private HashMap<String, Element> enclosedElement = new HashMap<>();
 
-	private ParameterBuilder parUtils = new ParameterBuilder();
+	private ParameterBuilder parBuilder = new ParameterBuilder();
 	private AnnotationBuilder annUtils = new AnnotationBuilder();
 	private Elements utils;
 
@@ -88,7 +92,7 @@ public class ElementUtils {
 
 		return getEnclosedElements().stream()
 			.filter(el -> el.getAnnotation(Transient.class) == null
-					&& el.getKind() == ElementKind.FIELD
+				&& el.getKind() == ElementKind.FIELD
 			)
 			.collect(Collectors.toList());
 	}
@@ -98,6 +102,64 @@ public class ElementUtils {
 		return this.getNonTransientFields()
 			.stream().map(f -> f.getSimpleName().toString())
 			.collect(Collectors.toList());
+	}
+
+	public String getParameters(ExecutableElement element,
+	                            RequestMethod method, String bodyVariableName) {
+
+		StringBuilder methodParameters = new StringBuilder("(");
+
+		for (int i = 0; i < element.getParameters().size(); i++) {
+
+			VariableElement param = element.getParameters().get(i);
+			String paramName = param.getSimpleName().toString();
+
+			if (method == RequestMethod.POST)
+				methodParameters.append("(" + param.asType().toString() + ") "
+					+ bodyVariableName + ".get(\"" + paramName + "\")");
+			else
+				methodParameters.append(paramName);
+
+			if (i < element.getParameters().size() - 1)
+				methodParameters.append(" ,");
+		}
+		methodParameters.append(")");
+
+		return methodParameters.toString();
+	}
+
+	public String getParameters(ExecutableElement element) {
+
+		return this.getParameters(element, RequestMethod.GET, "");
+	}
+
+	public void addParameter(MethodSpec.Builder builder, ExecutableElement element) {
+
+		for (int i = 0; i < element.getParameters().size(); i++) {
+
+			VariableElement param = element.getParameters().get(i);
+			String paramName = param.getSimpleName().toString();
+
+			builder.addParameter(this.parBuilder
+				.type(param.asType())
+				.name(paramName)
+				.build());
+		}
+	}
+
+	public void addRequestParameter(MethodSpec.Builder builder, ExecutableElement element) {
+
+		for (int i = 0; i < element.getParameters().size(); i++) {
+
+			VariableElement param = element.getParameters().get(i);
+			String paramName = param.getSimpleName().toString();
+
+			builder.addParameter(this.parBuilder
+				.type(param.asType())
+				.name(paramName)
+				.annotation(this.annUtils.requestParam(true))
+				.build());
+		}
 	}
 
 	public String elementSimpleName() {
@@ -117,21 +179,21 @@ public class ElementUtils {
 
 	public ParameterSpec elementParam() {
 
-		return this.parUtils.name("entity").type(this.elementType).build();
+		return this.parBuilder.name("entity").type(this.elementType).build();
 	}
 
 	public ParameterSpec elementReqBodyParam() {
 
-		return this.parUtils.name("entity").type(this.elementType).annotation(RequestBody.class).build();
+		return this.parBuilder.name("entity").type(this.elementType).annotation(RequestBody.class).build();
 	}
 
 	public ParameterSpec elementIdParam() {
 
-		return this.parUtils.name("id").type(this.elementIdType).build();
+		return this.parBuilder.name("id").type(this.elementIdType).build();
 	}
 
 	public ParameterSpec elementIdPathParam() {
 
-		return this.parUtils.name("id").type(this.elementIdType).annotation(this.annUtils.build(PathVariable.class, "id")).build();
+		return this.parBuilder.name("id").type(this.elementIdType).annotation(this.annUtils.build(PathVariable.class, "id")).build();
 	}
 }
