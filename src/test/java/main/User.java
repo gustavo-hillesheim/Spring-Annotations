@@ -1,10 +1,10 @@
 package main;
 
-import main.annotations.CRUD;
+import has.annotations.CRUD;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-import main.annotations.Endpoint;
+import has.annotations.Endpoint;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;

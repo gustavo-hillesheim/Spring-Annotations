@@ -1,12 +1,14 @@
 package main;
 
+import has.annotations.Authentication;
+import main.authentication.NoEncodingEncoder;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import main.annotations.HASConfiguration;
+import has.annotations.HASConfiguration;
 
 @SpringBootApplication
 @HASConfiguration
-//@Authentication(secret = "GustavoLegal", encoder = NoEncodingEncoder.class)
+@Authentication(secret = "GustavoLegal", encoder = NoEncodingEncoder.class)
 public class Main {
 
 	public static void main(String[] args) {
